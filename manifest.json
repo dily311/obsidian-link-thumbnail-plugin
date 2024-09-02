@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "link-thumbnail-plugin",
+	"name": "Link thumbnail Plugin",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "This is a plugin that displays link thumbnails for Obsidian",
+	"author": "dily311",
+	"authorUrl": "github.com/dily311",
 	"isDesktopOnly": false
 }
