@@ -1,8 +1,91 @@
-/*
+.link-thumbnail {
+  container-name: link-thumbnail;
+  container-type: inline-size;
+  min-width: 160px;
+  border: 1px solid var(--color-base-30) !important;
+  background: var(--background-primary);
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.og-link {
+  display: flex;
+  gap: 0;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  overflow: hidden;
 
-If your plugin does not need CSS, delete this file.
+  background: none;
+  color: var(--text-normal);
+  
+  /* 초기화 */
+  padding-right: 0;
+  color: unset;
+  text-decoration: none !important;
+}
 
-*/
+/* 호버 */
+.og-link:hover {
+  text-decoration: none;
+  color: unset;
+}
+
+/* og-thumbnail */
+.og-thumbnail img {
+  width: 100%;
+  height: 100%;
+  max-height: 100px;
+  object-fit: cover !important;
+  object-position: center;
+  border-radius: 0 !important;
+}
+
+/* og-info-container */
+.og-info-container {
+  display: grid;
+  gap: 8px;
+  padding: 12px 10px;
+  color: var(--text-normal);
+}
+
+.og-info {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.og-description {
+  font-size: 12px;
+  -webkit-line-clamp: 2;
+  display: box;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.og-url {
+  font-size: 12px;
+  margin-block: 0 !important;
+  color: var(--link-color);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+@container link-thumbnail (width > 300px) {
+  .og-link {
+      max-height: 130px;
+      flex-direction: row;
+  }
+
+  .og-link .og-thumbnail {
+      width: 140px;
+      flex-shrink: 0;
+  }
+  .og-thumbnail img {
+    max-height: none;
+  }
+  .og-info-container {
+    padding: 12px 20px;
+  }
+}
