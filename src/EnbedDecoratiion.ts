@@ -5,7 +5,6 @@ import {syntaxTree, tokenClassNodeProp} from "@codemirror/language";
 import LinkThumbnailPlugin from "./main";
 import { LinkThumbnailWidgetParams, urlRegex } from "./LinkThumbnailWidgetParams";
 import { WidgetType } from "@codemirror/view";
-import { ogDataCacheDisable } from "./localforage";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -13,6 +12,7 @@ interface TokenSpec {
     from: number;
     to: number;
     value: string;
+    isBlock: boolean;
 }
 
 const statefulDecorations = defineStatefulDecoration();
@@ -41,32 +41,31 @@ class StatefulDecorationSet {
         });
 
         const decorations: Range<Decoration>[] = [];
-        for (const token of tokens) {    
-            let deco = this.decoCache[token.value];
-            
+        for (const token of tokens) {
+            const UID = token.value + token.from + token.to;
+            let deco = this.decoCache[UID];
             if (!deco) {
                 const widget = await LinkThumbnailWidgetParams(token.value);
-                if (widget === null) {
-                    deco = this.decoCache[token.value] = Decoration.mark({attributes: {class: "noLinkThumbnail"}});
-                } else {
+                if (widget) {
                     // 넣을 EL 받아오기
                     const linkEl = createEl("a", {
-						href: token.value,
-						cls: "markdown-rendered external-link og-link",
+                        href: token.value,
+                        cls: "external-link og-link",
                         attr: {
                             "data-tooltip-position": "top",
                             "aria-label": token.value
                         },
-					});
+                    });
                     linkEl.innerHTML = widget;
                     linkEl.addEventListener("click", (e) => e.stopPropagation());
 
-                    const div = createDiv({
-						cls: "cm-embed-block cm-embed-link link-thumbnail",
-					});
-                    div.appendChild(linkEl);
+                    const wrapper = createDiv({
+                        cls: "markdown-rendered cm-embed-link link-thumbnail is-loaded",
+                    });
+                    wrapper.appendChild(linkEl);
+                    if (!token.isBlock) wrapper.addClass("inline-embed")
 
-                    deco = this.decoCache[token.value] = Decoration.replace({widget: new ogLinkWidget(div), block: true});
+                    deco = this.decoCache[UID] = Decoration.replace({widget: new ogLinkWidget(wrapper), block: token.isBlock});
                 }
                 
             }
@@ -78,9 +77,17 @@ class StatefulDecorationSet {
     debouncedUpdate = debounce(this.updateAsyncDecorations, 100, true);
 
     async updateAsyncDecorations(tokens: TokenSpec[]): Promise<void> {
+        let isNoLinkThumbnails = false;
+        const tfile = this.plugin.app.workspace.getActiveFile();
+        if (tfile) {
+            await this.plugin.app.fileManager.processFrontMatter(tfile, (f) => {
+                const cssclasses = f["cssclasses"];
+                if (cssclasses) isNoLinkThumbnails = cssclasses.includes("noLinkThumbnail");
+            });
+        }
         // 현재 모드 판별
         const isLivePreviewMode = this.editor.state.field(editorLivePreviewField);
-        const decorations = (isLivePreviewMode)? await this.computeAsyncDecorations(tokens): null;
+        const decorations = (isLivePreviewMode && !isNoLinkThumbnails)? await this.computeAsyncDecorations(tokens): null;
         // if our compute function returned nothing and the state field still has decorations, clear them out
         if (decorations || this.editor.state.field(statefulDecorations.field).size) {
             this.editor.dispatch({effects: statefulDecorations.update.of(decorations || Decoration.none)});
@@ -111,21 +118,13 @@ function buildViewPlugin(plugin: LinkThumbnailPlugin) {
                     tree.iterate({
                         enter: ({node, from, to}) => {
                             const tokenProps = node.type.prop<string>(tokenClassNodeProp);
-                            if (tokenProps && node.name === "url") {
-                                const parentElement = node.parent?.type;
-                                if (parentElement?.prop<string>(tokenClassNodeProp)?.includes("noLinkThumbnail")) {
-                                    return;
-                                }
-                                const value = view.state.doc.sliceString(from, to);
-                                if (value) {
-                                    ogDataCacheDisable.getItem(value).then((item) => {
-                                        if (!item) {
-                                            targetElements.push({from: from, to: to, value: value});
-                                        }
-                                    })
-                                    
+                            if(tokenProps) {
+                                if (tokenProps.includes("url") && !tokenProps.includes("formatting")) {
+                                    const value = view.state.doc.sliceString(from, to);
+                                    targetElements.push({from: from, to: to, value: value, isBlock: (tokenProps === "url" || false)});
                                 }
                             }
+
                         },
                     });
                 } catch (error) {

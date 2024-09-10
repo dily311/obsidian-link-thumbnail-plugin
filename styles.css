@@ -1,12 +1,20 @@
-.link-thumbnail {
+.link-thumbnail:not(.inline-embed) {
   container-name: link-thumbnail;
   container-type: inline-size;
-  min-width: 160px;
-  border: 1px solid var(--color-base-30) !important;
-  background: var(--background-primary);
+}
+.HyperMD-list-line:has(.link-thumbnail.inline-embed) {
+  container-name: link-thumbnail;
+  container-type: inline-size;
+}
+.link-thumbnail.inline-embed {
+  display: inline;
 }
 
 .og-link {
+  min-width: 160px;
+  border: 1px solid var(--color-base-30) !important;
+  background: var(--background-primary);
+
   display: flex;
   gap: 0;
   flex-direction: column;
@@ -74,7 +82,7 @@
 
 @container link-thumbnail (width > 300px) {
   .og-link {
-      max-height: 130px;
+      height: 130px;
       flex-direction: row;
   }
 
@@ -87,5 +95,16 @@
   }
   .og-info-container {
     padding: 12px 20px;
+  }
+}
+
+
+/* dataview cards css snipets 지원 */
+:is(.markdown-source-view.mod-cm6 .cm-table-widget .table-cell-wrapper, 
+        .markdown-rendered tbody tr > td):has(> .link-thumbnail:only-child) {
+  padding: 0;
+
+  .link-thumbnail:only-child {
+    border: none !important;
   }
 }

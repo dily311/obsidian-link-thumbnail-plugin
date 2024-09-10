@@ -1,7 +1,7 @@
 {
 	"id": "link-thumbnail-plugin",
 	"name": "Link thumbnail Plugin",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "This is a plugin that displays link thumbnails for Obsidian",
 	"author": "dily311",

@@ -28,7 +28,6 @@ async function getImgFile(imgUrl: string, userAgent:string) {
         });
         const base64String = arrayBufferToBase64(file.arrayBuffer);
         if (imgType.includes("svg")) imgType += "+xml";
-        console.log(imgUrl, );
         return `data:image/${imgType};charset=utf-8;base64,` + base64String;
 
     } catch (error) {

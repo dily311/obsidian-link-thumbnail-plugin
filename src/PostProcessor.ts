@@ -23,13 +23,14 @@ export class PostProcessor {
 				const params = await LinkThumbnailWidgetParams(url);
 				if (params != null) {
 					const linkContainer = linkEl.parentElement;
-					const wrapper = createDiv({cls: "link-thumbnail"})
 					
 					linkEl.innerHTML = params;
                     linkEl.className = "markdown-rendered external-link og-link";
 					linkEl.setAttribute("data-tooltip-position", "top");
 					linkEl.setAttribute("aria-label", url);
 					linkEl.addEventListener("click", (e) => e.stopPropagation());
+					
+					const wrapper = createDiv({cls: "link-thumbnail"})
 					// 위치 변경
 					linkContainer?.insertBefore(wrapper, linkEl);
 					wrapper.appendChild(linkEl);
