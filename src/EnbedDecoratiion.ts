@@ -5,6 +5,7 @@ import {syntaxTree, tokenClassNodeProp} from "@codemirror/language";
 import LinkThumbnailPlugin from "./main";
 import { LinkThumbnailWidgetParams, urlRegex } from "./LinkThumbnailWidgetParams";
 import { WidgetType } from "@codemirror/view";
+import { ogDataCacheDisable } from "./localforage";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -20,6 +21,7 @@ const statefulDecorations = defineStatefulDecoration();
 class StatefulDecorationSet {
     editor: EditorView;
     decoCache: { [cls: string]: Decoration } = Object.create(null);
+    decoCacheDisable: { [cls: string]: string } = Object.create(null);
     plugin: LinkThumbnailPlugin;
 
     constructor(editor: EditorView, plugin: LinkThumbnailPlugin) {
@@ -28,48 +30,39 @@ class StatefulDecorationSet {
     }
 
     async computeAsyncDecorations(tokens: TokenSpec[]): Promise<DecorationSet | null> {    
-        // 현재 선택된 부분
-        const selectFrom = this.editor.state.selection.main.from;
-        const selectTo = this.editor.state.selection.main.to;
-    
-        tokens = tokens.filter((token) => {
-            // 현재 선택영역 판별
-            const isSelected = (selectFrom <= token.to && selectTo >= token.from) || (selectFrom >= token.from && selectTo <= token.to);
-            // url이 적합한 지 판벌
-            const isUrl = urlRegex.test(token.value);
-            return !isSelected && isUrl
-        });
-
         const decorations: Range<Decoration>[] = [];
         for (const token of tokens) {
-            const UID = token.value + token.from + token.to;
-            let deco = this.decoCache[UID];
-            if (!deco) {
-                const widget = await LinkThumbnailWidgetParams(token.value);
-                if (widget) {
-                    // 넣을 EL 받아오기
-                    const linkEl = createEl("a", {
-                        href: token.value,
-                        cls: "external-link og-link",
-                        attr: {
-                            "data-tooltip-position": "top",
-                            "aria-label": token.value
-                        },
-                    });
-                    linkEl.innerHTML = widget;
-                    linkEl.addEventListener("click", (e) => e.stopPropagation());
-
-                    const wrapper = createDiv({
-                        cls: "markdown-rendered cm-embed-link link-thumbnail is-loaded",
-                    });
-                    wrapper.appendChild(linkEl);
-                    if (!token.isBlock) wrapper.addClass("inline-embed")
-
-                    deco = this.decoCache[UID] = Decoration.replace({widget: new ogLinkWidget(wrapper), block: token.isBlock});
+            const isDisable = await ogDataCacheDisable.getItem(token.value);
+            if (isDisable !== "") {
+                const UID = token.value + token.from + token.to;
+                let deco = this.decoCache[UID];
+                if (!deco) {
+                    const widget = await LinkThumbnailWidgetParams(token.value);
+                    if (widget) {
+                        // 넣을 EL 받아오기
+                        const linkEl = createEl("a", {
+                            href: token.value,
+                            cls: "external-link og-link",
+                            attr: {
+                                "data-tooltip-position": "top",
+                                "aria-label": token.value
+                            },
+                        });
+                        linkEl.innerHTML = widget;
+                        linkEl.addEventListener("click", (e) => e.stopPropagation());
+                        const wrapper = createDiv({
+                            cls: "markdown-rendered cm-embed-link link-thumbnail is-loaded",
+                        });
+                        wrapper.appendChild(linkEl);
+                        if (!token.isBlock) wrapper.addClass("inline-embed")
+    
+                        deco = this.decoCache[UID] = Decoration.replace({widget: new ogLinkWidget(wrapper), block: token.isBlock});
+                        decorations.push(deco.range(token.from, token.to));
+                    } 
+                } else {
+                    decorations.push(deco.range(token.from, token.to));
                 }
-                
             }
-            decorations.push(deco.range(token.from, token.to));
         }
         return Decoration.set(decorations, true);
     }
@@ -87,6 +80,18 @@ class StatefulDecorationSet {
         }
         // 현재 모드 판별
         const isLivePreviewMode = this.editor.state.field(editorLivePreviewField);
+        // 현재 선택된 부분
+        const selectFrom = this.editor.state.selection.main.from;
+        const selectTo = this.editor.state.selection.main.to;
+
+        tokens = tokens.filter((token) => {
+            // 현재 선택영역 판별
+            const isSelected = (selectFrom <= token.to && selectTo >= token.from) || (selectFrom >= token.from && selectTo <= token.to);
+            // url이 적합한 지 판벌
+            const isUrl = urlRegex.test(token.value);
+            return !isSelected && isUrl;
+        });
+
         const decorations = (isLivePreviewMode && !isNoLinkThumbnails)? await this.computeAsyncDecorations(tokens): null;
         // if our compute function returned nothing and the state field still has decorations, clear them out
         if (decorations || this.editor.state.field(statefulDecorations.field).size) {

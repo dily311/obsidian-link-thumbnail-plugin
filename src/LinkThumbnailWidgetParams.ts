@@ -80,17 +80,17 @@ async function getOgData(url: string , userAgent:string, document: Document): Pr
 }
 
 async function getData(url: string): Promise<ogData|undefined> {
-    const userAgent = navigator.userAgent.replace(/(obsidian\/([0-9|\\.]+)|Electron\/([0-9|\\.]+))\s/g, "");
-    const response = await requestUrl({
-        url:url,
-        headers:{
-            "user-agent": userAgent,
-            'accept-language': navigator.language,
-            'accept-encoding': "UTF-8"
-        }
-    });
-
     try {
+        const userAgent = navigator.userAgent.replace(/(obsidian\/([0-9|\\.]+)|Electron\/([0-9|\\.]+))\s/g, "");
+        const response = await requestUrl({
+            url:url,
+            headers:{
+                "user-agent": userAgent,
+                'accept-language': navigator.language,
+                'accept-encoding': "UTF-8"
+            }
+        });
+
         const contentType = response.headers["content-type"];
         if (response && response.headers && contentType && !contentType?.includes('text/')) {
             throw new Error('Page must return a header content-type with text/');
@@ -118,7 +118,7 @@ async function getData(url: string): Promise<ogData|undefined> {
             return ogData;
         }
     } catch (error) {
-        console.log(error, response);
+        console.log(error, url);
         ogDataCacheDisable.setItem(url, "");
     }
 
@@ -140,13 +140,10 @@ function template(data: ogData): string {
 }
 
 export async function LinkThumbnailWidgetParams(url: string): Promise<string | null> {
-    const isDisable = await ogDataCacheDisable.getItem(url);
-    if (!isDisable) {
-        const data = await ogDataCache.getItem(url) as ogData;
-        if (data) return template(data);
-         
-        const ogData = await getData(url);
-        if (ogData) return template(ogData);
-    }
+    const data = await ogDataCache.getItem(url) as ogData;
+    if (data) return template(data);
+        
+    const ogData = await getData(url);
+    if (ogData) return template(ogData);
     return null;
 }
