@@ -46,7 +46,7 @@
 /* og-info-container */
 .og-info-container {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   padding: 12px 10px;
   color: var(--text-normal);
 }
@@ -78,8 +78,8 @@
 }
 
 .link-thumbnail.inline-embed {
-  display: inline;
-
+  display: inline-block;
+  width: 100%;
 }
 @media (width > 300px) {
   .link-thumbnail.inline-embed {

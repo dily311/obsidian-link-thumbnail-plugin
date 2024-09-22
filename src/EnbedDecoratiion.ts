@@ -34,8 +34,8 @@ class StatefulDecorationSet {
         for (const token of tokens) {
             const isDisable = await ogDataCacheDisable.getItem(token.value);
             if (isDisable !== "") {
-                const UID = token.value + token.from + token.to;
-                let deco = this.decoCache[UID];
+                // const UID = token.value + token.from + token.to;
+                let deco = this.decoCache[token.value  + token.to];
                 if (!deco) {
                     const widget = await LinkThumbnailWidgetParams(token.value);
                     if (widget) {
@@ -56,11 +56,11 @@ class StatefulDecorationSet {
                         wrapper.appendChild(linkEl);
                         if (!token.isBlock) wrapper.addClass("inline-embed")
     
-                        deco = this.decoCache[UID] = Decoration.replace({widget: new ogLinkWidget(wrapper), block: token.isBlock});
-                        decorations.push(deco.range(token.from, token.to));
+                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(wrapper), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
+                        decorations.push(deco.range(token.to));
                     } 
                 } else {
-                    decorations.push(deco.range(token.from, token.to));
+                    decorations.push(deco.range(token.to));
                 }
             }
         }
@@ -123,9 +123,11 @@ function buildViewPlugin(plugin: LinkThumbnailPlugin) {
                     tree.iterate({
                         enter: ({node, from, to}) => {
                             const tokenProps = node.type.prop<string>(tokenClassNodeProp);
-                            if(tokenProps && node.name === "url") {
+                            if(tokenProps && tokenProps.includes("url") && !tokenProps.includes("formatting") && !node.name.includes("string_url")) {
+                                console.log(tokenProps, node.name);
+                            // if(tokenProps && node.name === "url") {
                                 const value = view.state.doc.sliceString(from, to);
-                                targetElements.push({from: from, to: to, value: value, isBlock: (tokenProps === "url" || false)});
+                                targetElements.push({from: from, to: to, value: value, isBlock: (node.name === "url" || false)});
                             }
 
                         },
