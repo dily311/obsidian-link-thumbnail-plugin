@@ -123,11 +123,9 @@ function buildViewPlugin(plugin: LinkThumbnailPlugin) {
                     tree.iterate({
                         enter: ({node, from, to}) => {
                             const tokenProps = node.type.prop<string>(tokenClassNodeProp);
-                            if(tokenProps) {
-                                if (tokenProps.includes("url") && !tokenProps.includes("formatting")) {
-                                    const value = view.state.doc.sliceString(from, to);
-                                    targetElements.push({from: from, to: to, value: value, isBlock: (tokenProps === "url" || false)});
-                                }
+                            if(tokenProps && node.name === "url") {
+                                const value = view.state.doc.sliceString(from, to);
+                                targetElements.push({from: from, to: to, value: value, isBlock: (tokenProps === "url" || false)});
                             }
 
                         },
