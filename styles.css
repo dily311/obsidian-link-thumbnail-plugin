@@ -1,16 +1,11 @@
-.link-thumbnail:not(.inline-embed) {
+.link-thumbnail {
   container-name: link-thumbnail;
   container-type: inline-size;
-}
-.HyperMD-list-line:has(.link-thumbnail.inline-embed) {
-  container-name: link-thumbnail;
-  container-type: inline-size;
-}
-.link-thumbnail.inline-embed {
-  display: inline;
 }
 
+
 .og-link {
+  position: relative;  
   min-width: 160px;
   max-height: none;
   border: 1px solid var(--color-base-30) !important;
@@ -21,6 +16,7 @@
   flex-direction: column;
   flex-wrap: nowrap;
   overflow: hidden;
+  overflow-wrap: break-word;
 
   background: none;
   color: var(--text-normal);
@@ -80,6 +76,32 @@
   text-overflow: ellipsis;
   overflow: hidden;
 }
+
+.link-thumbnail.inline-embed {
+  display: inline;
+
+}
+@media (width > 300px) {
+  .link-thumbnail.inline-embed {
+    .og-link {
+        min-height: 100px;
+        max-height: 130px;
+        flex-direction: row;
+    }
+  
+    .og-link .og-thumbnail {
+        width: 140px;
+        flex-shrink: 0;
+    }
+    .og-thumbnail img {
+      max-height: none;
+    }
+    .og-info-container {
+      padding: 12px 20px;
+    }
+  }
+}
+
 
 @container link-thumbnail (width > 300px) {
   .og-link {
