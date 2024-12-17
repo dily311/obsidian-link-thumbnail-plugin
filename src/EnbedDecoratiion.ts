@@ -6,6 +6,7 @@ import LinkThumbnailPlugin from "./main";
 import { LinkThumbnailWidgetParams, urlRegex } from "./LinkThumbnailWidgetParams";
 import { WidgetType } from "@codemirror/view";
 import { ogDataCacheDisable } from "./localforage";
+import { check_cssclasses } from "./check";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -70,14 +71,7 @@ class StatefulDecorationSet {
     debouncedUpdate = debounce(this.updateAsyncDecorations, 100, true);
 
     async updateAsyncDecorations(tokens: TokenSpec[]): Promise<void> {
-        let isNoLinkThumbnails = false;
-        const tfile = this.plugin.app.workspace.getActiveFile();
-        if (tfile) {
-            await this.plugin.app.fileManager.processFrontMatter(tfile, (f) => {
-                const cssclasses = f["cssclasses"];
-                if (cssclasses) isNoLinkThumbnails = cssclasses.includes("noLinkThumbnail");
-            });
-        }
+        const isNoLinkThumbnails = await check_cssclasses(this.plugin);
         // 현재 모드 판별
         const isLivePreviewMode = this.editor.state.field(editorLivePreviewField);
         // 현재 선택된 부분
@@ -97,7 +91,10 @@ class StatefulDecorationSet {
         if (decorations || this.editor.state.field(statefulDecorations.field).size) {
             this.editor.dispatch({effects: statefulDecorations.update.of(decorations || Decoration.none)});
         }
+
+
     }
+
 }
 
 function buildViewPlugin(plugin: LinkThumbnailPlugin) {
@@ -123,9 +120,8 @@ function buildViewPlugin(plugin: LinkThumbnailPlugin) {
                     tree.iterate({
                         enter: ({node, from, to}) => {
                             const tokenProps = node.type.prop<string>(tokenClassNodeProp);
-                            if(tokenProps && tokenProps.includes("url") && !tokenProps.includes("formatting") && !node.name.includes("string_url")) {
+                            if(tokenProps && (node.name.includes("url") && !node.name.includes("string"))) {
                                 // console.log(tokenProps, node.name);
-                            // if(tokenProps && node.name === "url") {
                                 const value = view.state.doc.sliceString(from, to);
                                 targetElements.push({from: from, to: to, value: value, isBlock: (node.name === "url" || false)});
                             }
