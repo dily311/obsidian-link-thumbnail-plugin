@@ -1,9 +1,20 @@
 import { Plugin } from 'obsidian';
 import { asyncDecoBuilderExt } from './EnbedDecoratiion';
 import { PostProcessor } from './PostProcessor';
-import { ogDataCache, ogDataCacheDisable } from './localforage';
-  
+import { ogData } from './Interface/ogData';
+import { widgetParams } from './WidgetParams';
+interface ExamplePluginSettings {
+	data: ogData[];
+	disableUrl: string[];
+}
+const DEFAULT_SETTINGS: Partial<ExamplePluginSettings> = {
+	data: [],
+	disableUrl: []	
+};
 export default class LinkThumbnailPlugin extends Plugin {
+	settings:ExamplePluginSettings;
+	widget: widgetParams;
+
 	/**
 	 * @returns true if Live Preview is supported
 	 */
@@ -13,14 +24,19 @@ export default class LinkThumbnailPlugin extends Plugin {
 	}
 
     async onload() {
+		// 세팅 로드
+		await this.loadSettings();
+
+		this.widget = new widgetParams(this);
+
 		// In LivePre view Mode
 		if (this.isUsingLivePreviewEnabledEditor()) {
 			// eslint-disable-next-line @typescript-eslint/no-var-requires
 			const Prec = require("@codemirror/state").Prec;
-			this.registerEditorExtension(Prec.lowest(asyncDecoBuilderExt(this)));
+			this.registerEditorExtension(Prec.lowest(asyncDecoBuilderExt(this,)));
 		}
 		// In Reading Mode
-		const postProcessor = new PostProcessor(this);
+		const postProcessor = new PostProcessor(this,);
         this.registerMarkdownPostProcessor(postProcessor.processor);
 
 		// updateOptions
@@ -28,19 +44,18 @@ export default class LinkThumbnailPlugin extends Plugin {
 			this.app.workspace.updateOptions();
 		}));
 
-		this.addCommand({
-			id: "remove-to-all-ogData",
-			name: "Remove to all ogData",
-			callback: () => {
-				ogDataCache.clear();
-				ogDataCacheDisable.clear();
-			}
-		})
-
 		this.app.workspace.updateOptions();
     }
 	async onunload() {
 		console.log("disabling plugin: link");
+	}
+
+	async loadSettings() {
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
 	}
 
 }

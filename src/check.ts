@@ -1,6 +1,6 @@
 import LinkThumbnailPlugin from "./main";
 
-export async function check_cssclasses(plugin: LinkThumbnailPlugin) {
+export async function checkCssClasses(plugin: LinkThumbnailPlugin) {
     let isNoLinkThumbnails = false;
     const tfile = plugin.app.workspace.getActiveFile();
     if (tfile) {

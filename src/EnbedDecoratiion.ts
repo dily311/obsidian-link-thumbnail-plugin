@@ -3,10 +3,9 @@ import {EditorView, Decoration, DecorationSet, ViewUpdate, ViewPlugin} from "@co
 import {StateField, StateEffect, StateEffectType, Range} from "@codemirror/state";
 import {syntaxTree, tokenClassNodeProp} from "@codemirror/language";
 import LinkThumbnailPlugin from "./main";
-import { LinkThumbnailWidgetParams, urlRegex } from "./LinkThumbnailWidgetParams";
+import { urlRegex } from "./urlRegex";
 import { WidgetType } from "@codemirror/view";
-import { ogDataCacheDisable } from "./localforage";
-import { check_cssclasses } from "./check";
+import { checkCssClasses } from "./check";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -33,13 +32,19 @@ class StatefulDecorationSet {
     async computeAsyncDecorations(tokens: TokenSpec[]): Promise<DecorationSet | null> {    
         const decorations: Range<Decoration>[] = [];
         for (const token of tokens) {
-            const isDisable = await ogDataCacheDisable.getItem(token.value);
-            if (isDisable !== "") {
+            let isDisable = true;
+            this.plugin.settings.disableUrl.forEach((item) => {
+                if (item == token.value) {
+                    isDisable = false;
+                } 
+            })
+            
+            if (isDisable) {
                 // const UID = token.value + token.from + token.to;
                 let deco = this.decoCache[token.value  + token.to];
                 if (!deco) {
-                    const widget = await LinkThumbnailWidgetParams(token.value);
-                    if (widget) {
+                    const params = await this.plugin.widget.getItem(token.value)
+                    if (params) {
                         // 넣을 EL 받아오기
                         const linkEl = createEl("a", {
                             href: token.value,
@@ -49,7 +54,7 @@ class StatefulDecorationSet {
                                 "aria-label": token.value
                             },
                         });
-                        linkEl.innerHTML = widget;
+                        linkEl.innerHTML = params;
                         linkEl.addEventListener("click", (e) => e.stopPropagation());
                         const wrapper = createDiv({
                             cls: "markdown-rendered cm-embed-link link-thumbnail is-loaded",
@@ -71,7 +76,7 @@ class StatefulDecorationSet {
     debouncedUpdate = debounce(this.updateAsyncDecorations, 100, true);
 
     async updateAsyncDecorations(tokens: TokenSpec[]): Promise<void> {
-        const isNoLinkThumbnails = await check_cssclasses(this.plugin);
+        const isNoLinkThumbnails = await checkCssClasses(this.plugin);
         // 현재 모드 판별
         const isLivePreviewMode = this.editor.state.field(editorLivePreviewField);
         // 현재 선택된 부분
@@ -91,8 +96,6 @@ class StatefulDecorationSet {
         if (decorations || this.editor.state.field(statefulDecorations.field).size) {
             this.editor.dispatch({effects: statefulDecorations.update.of(decorations || Decoration.none)});
         }
-
-
     }
 
 }

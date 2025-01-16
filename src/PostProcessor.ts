@@ -1,7 +1,7 @@
 import { MarkdownPostProcessorContext } from "obsidian";
 import LinkThumbnailPlugin from "./main";
-import { LinkThumbnailWidgetParams, urlRegex } from "./LinkThumbnailWidgetParams";
-import { check_cssclasses } from "./check";
+import { urlRegex } from "./urlRegex";
+import { checkCssClasses } from "./check";
 
 export class PostProcessor {
 	plugin: LinkThumbnailPlugin;
@@ -16,14 +16,14 @@ export class PostProcessor {
 	) => {
 		// 링크 변환
 		const linkEls:Element[] = element.findAll("a.external-link:not(.cm-formatting, .markdown-rendered)");
-		const isNoLinkThumbnails = await check_cssclasses(this.plugin);
+		const isNoLinkThumbnails = await checkCssClasses(this.plugin);
 		if (!isNoLinkThumbnails) {
 			for (const linkEl of linkEls) {
 				const url = linkEl.innerHTML;
 				// url이 적합한 지 판벌
 				const isUrl = urlRegex.test(url);
 				if (isUrl) {
-					const params = await LinkThumbnailWidgetParams(url);
+					const params = await this.plugin.widget.getItem(url)
 					if (params != null) {
 						const linkContainer = linkEl.parentElement;
 						
