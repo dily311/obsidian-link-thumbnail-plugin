@@ -3,6 +3,7 @@ import LinkThumbnailPlugin from "./main";
 import { Buffer } from "./Buffer";
 import { ogData } from "./Interface/ogData";
 import { urlRegex } from "./urlRegex";
+import { ogDataCache, ogDataCacheDisable } from "./localforage";
 
 export class widgetParams {
     plugin: LinkThumbnailPlugin;
@@ -14,12 +15,9 @@ export class widgetParams {
     }
 
     async getItem(url: string) {
-        const dataArray = this.plugin.settings.data;
-        for (let i = 0; i < dataArray.length; i++) {
-            const data = dataArray[i];
-            if (data.ogUrl == url) {
-                return this.template(data)
-            }   
+        const dataArray = await ogDataCache.getItem(url) as ogData;
+        if (dataArray) {
+            return this.template(dataArray);
         }
     
         const item = await this.createdItem(url);
@@ -29,9 +27,9 @@ export class widgetParams {
     }
 
     async setItem(item: ogData) {
-        this.plugin.settings.data.push(item)
-        await this.plugin.saveSettings()
+        await ogDataCache.setItem(item.ogUrl, item);
     }
+
     async createdItem(url: string) {
         const document = await this.conn(url);
         if (document) {
@@ -70,8 +68,7 @@ export class widgetParams {
             await this.setItem(data)
             return data
         }
-        this.plugin.settings.disableUrl.push(url);
-        await this.plugin.saveSettings();
+        await ogDataCacheDisable.setItem(url, "");
         return null;
     }
 

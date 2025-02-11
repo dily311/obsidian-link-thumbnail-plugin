@@ -6,6 +6,7 @@ import LinkThumbnailPlugin from "./main";
 import { urlRegex } from "./urlRegex";
 import { WidgetType } from "@codemirror/view";
 import { checkCssClasses } from "./check";
+import { ogDataCacheDisable } from "./localforage";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -32,14 +33,9 @@ class StatefulDecorationSet {
     async computeAsyncDecorations(tokens: TokenSpec[]): Promise<DecorationSet | null> {    
         const decorations: Range<Decoration>[] = [];
         for (const token of tokens) {
-            let isDisable = true;
-            this.plugin.settings.disableUrl.forEach((item) => {
-                if (item == token.value) {
-                    isDisable = false;
-                } 
-            })
-            
-            if (isDisable) {
+            const isDisable = await ogDataCacheDisable.getItem(token.value);
+
+            if (isDisable !== "") {
                 // const UID = token.value + token.from + token.to;
                 let deco = this.decoCache[token.value  + token.to];
                 if (!deco) {

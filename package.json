@@ -1,6 +1,6 @@
 {
 	"name": "link-thumbnail-plugin",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "This is a plugin that displays link thumbnails for obsidian",
 	"main": "main.js",
 	"scripts": {
@@ -27,6 +27,7 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"buffer": "^6.0.3"
+		"buffer": "^6.0.3",
+		"localforage": "^1.10.0"
 	}
 }
