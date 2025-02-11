@@ -7,6 +7,7 @@ import { urlRegex } from "./urlRegex";
 import { WidgetType } from "@codemirror/view";
 import { checkCssClasses } from "./check";
 import { ogDataCacheDisable } from "./localforage";
+import { getItem } from "./WidgetParams";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -22,7 +23,6 @@ const statefulDecorations = defineStatefulDecoration();
 class StatefulDecorationSet {
     editor: EditorView;
     decoCache: { [cls: string]: Decoration } = Object.create(null);
-    decoCacheDisable: { [cls: string]: string } = Object.create(null);
     plugin: LinkThumbnailPlugin;
 
     constructor(editor: EditorView, plugin: LinkThumbnailPlugin) {
@@ -39,7 +39,7 @@ class StatefulDecorationSet {
                 // const UID = token.value + token.from + token.to;
                 let deco = this.decoCache[token.value  + token.to];
                 if (!deco) {
-                    const params = await this.plugin.widget.getItem(token.value)
+                    const params = await getItem(token.value)
                     if (params) {
                         // 넣을 EL 받아오기
                         const linkEl = createEl("a", {

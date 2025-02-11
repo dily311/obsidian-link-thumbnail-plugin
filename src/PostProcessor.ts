@@ -2,6 +2,7 @@ import { MarkdownPostProcessorContext } from "obsidian";
 import LinkThumbnailPlugin from "./main";
 import { urlRegex } from "./urlRegex";
 import { checkCssClasses } from "./check";
+import { getItem } from "./WidgetParams";
 
 export class PostProcessor {
 	plugin: LinkThumbnailPlugin;
@@ -23,7 +24,7 @@ export class PostProcessor {
 				// url이 적합한 지 판벌
 				const isUrl = urlRegex.test(url);
 				if (isUrl) {
-					const params = await this.plugin.widget.getItem(url)
+					const params = await getItem(url);
 					if (params != null) {
 						const linkContainer = linkEl.parentElement;
 						
@@ -37,7 +38,6 @@ export class PostProcessor {
 						// 위치 변경
 						linkContainer?.insertBefore(wrapper, linkEl);
 						wrapper.appendChild(linkEl);
-	
 					}
 				}
 			}

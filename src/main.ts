@@ -1,23 +1,28 @@
 import { Plugin } from 'obsidian';
 import { asyncDecoBuilderExt } from './EnbedDecoratiion';
 import { PostProcessor } from './PostProcessor';
-import { widgetParams } from './WidgetParams';
 import { ogDataCache, ogDataCacheDisable } from './localforage';
 
 export default class LinkThumbnailPlugin extends Plugin {
-	widget: widgetParams;
 
     async onload() {
-		// widget 등록
-		this.widget = new widgetParams(this);
-
-		// In LivePre view Mode
-		this.registerEditorExtension(asyncDecoBuilderExt(this));
-
+		// add command
+		this.addCommand({
+			id: "Remove-caching-link data",
+			name: "Remove caching link data",
+			callback: () => {
+				ogDataCache.clear();
+				ogDataCacheDisable.clear();
+			}
+		})
+		
 		// In Reading Mode
 		const postProcessor = new PostProcessor(this);
         this.registerMarkdownPostProcessor(postProcessor.processor);
-
+		
+		// In LivePre view Mode
+		this.registerEditorExtension(asyncDecoBuilderExt(this));
+		// 모든 편집기에 변경사항 반영
 		this.app.workspace.updateOptions();
     }
 
