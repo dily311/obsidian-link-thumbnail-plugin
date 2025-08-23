@@ -1,8 +1,7 @@
-import { MarkdownPostProcessorContext } from "obsidian";
-import LinkThumbnailPlugin from "./main";
-import { urlRegex } from "./urlRegex";
-import { checkCssClasses } from "./check";
-import { getItem } from "./WidgetParams";
+import { MarkdownPostProcessorContext, MarkdownView } from "obsidian";
+import LinkThumbnailPlugin from "../main";
+import { urlRegex } from "../Utils/urlRegex";
+import { getItem } from "../Widget/WidgetParams";
 
 export class PostProcessor {
 	plugin: LinkThumbnailPlugin;
@@ -17,7 +16,11 @@ export class PostProcessor {
 	) => {
 		// 링크 변환
 		const linkEls:Element[] = element.findAll("a.external-link:not(.cm-formatting, .markdown-rendered)");
-		const isNoLinkThumbnails = await checkCssClasses(this.plugin);
+		
+        // 현재 뷰에서 cssClasses가 적용되는 지 판별
+        const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        const isNoLinkThumbnails = activeView?.contentEl.children[0]?.classList.contains("noLinkThumbnail");
+
 		if (!isNoLinkThumbnails) {
 			for (const linkEl of linkEls) {
 				const url = linkEl.innerHTML;

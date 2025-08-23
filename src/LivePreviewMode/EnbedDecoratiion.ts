@@ -1,13 +1,12 @@
-import {debounce, editorLivePreviewField} from "obsidian";
+import {debounce, MarkdownView} from "obsidian";
 import {EditorView, Decoration, DecorationSet, ViewUpdate, ViewPlugin} from "@codemirror/view";
 import {StateField, StateEffect, StateEffectType, Range} from "@codemirror/state";
 import {syntaxTree, tokenClassNodeProp} from "@codemirror/language";
-import LinkThumbnailPlugin from "./main";
-import { urlRegex } from "./urlRegex";
+import LinkThumbnailPlugin from "../main";
+import { urlRegex } from "../Utils/urlRegex";
 import { WidgetType } from "@codemirror/view";
-import { checkCssClasses } from "./check";
-import { ogDataCacheDisable } from "./localforage";
-import { getItem } from "./WidgetParams";
+import { ogDataCacheDisable } from "../Utils/localforage";
+import { getItem } from "../Widget/WidgetParams";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -72,9 +71,10 @@ class StatefulDecorationSet {
     debouncedUpdate = debounce(this.updateAsyncDecorations, 100, true);
 
     async updateAsyncDecorations(tokens: TokenSpec[]): Promise<void> {
-        const isNoLinkThumbnails = await checkCssClasses(this.plugin);
-        // 현재 모드 판별
-        const isLivePreviewMode = this.editor.state.field(editorLivePreviewField);
+        // 현재 뷰에서 cssClasses가 적용되는 지 판별
+        const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        const isNoLinkThumbnails = activeView?.contentEl.children[0]?.classList.contains("noLinkThumbnail");
+
         // 현재 선택된 부분
         const selectFrom = this.editor.state.selection.main.from;
         const selectTo = this.editor.state.selection.main.to;
@@ -87,7 +87,7 @@ class StatefulDecorationSet {
             return !isSelected && isUrl;
         });
 
-        const decorations = (isLivePreviewMode && !isNoLinkThumbnails)? await this.computeAsyncDecorations(tokens): null;
+        const decorations = (!isNoLinkThumbnails)? await this.computeAsyncDecorations(tokens): null;
         // if our compute function returned nothing and the state field still has decorations, clear them out
         if (decorations || this.editor.state.field(statefulDecorations.field).size) {
             this.editor.dispatch({effects: statefulDecorations.update.of(decorations || Decoration.none)});
