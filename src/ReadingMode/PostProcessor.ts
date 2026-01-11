@@ -1,6 +1,7 @@
 import { MarkdownPostProcessorContext, MarkdownView } from "obsidian";
 import LinkThumbnailPlugin from "@/main";
 import { urlRegex } from "@/Utils/urlRegex";
+import { LinkRenderer } from "@/Widget/LinkRenderer";
 
 export class PostProcessor {
 	plugin: LinkThumbnailPlugin;
@@ -26,20 +27,15 @@ export class PostProcessor {
 				// url이 적합한 지 판벌
 				const isUrl = urlRegex.test(url);
 				if (isUrl) {
-					const params = await this.plugin.linkDataManger.getCachedLink(url);
-					if (params != null) {
-						const linkContainer = linkEl.parentElement;
-						
-						linkEl.innerHTML = params;
-						linkEl.className = "markdown-rendered external-link og-link";
+					
+					const ogData = await this.plugin.linkDataManger.getCachedLink(url);
+					if (ogData != null) {						
+						linkEl.innerHTML = "";
+						linkEl.addClass("link-thumbnail");
 						linkEl.setAttribute("data-tooltip-position", "top");
 						linkEl.setAttribute("aria-label", url);
 						linkEl.addEventListener("click", (e) => e.stopPropagation());
-						
-						const wrapper = createDiv({cls: "link-thumbnail"})
-						// 위치 변경
-						linkContainer?.insertBefore(wrapper, linkEl);
-						wrapper.appendChild(linkEl);
+						linkEl.appendChild(LinkRenderer(ogData));
 					}
 				}
 			}

@@ -1,22 +1,15 @@
-.link-thumbnail {
+.link-thumbnail,
+.external-link.link-thumbnail {
   container-name: link-thumbnail;
   container-type: inline-size;
-}
 
-.link-thumbnail {
+  display: block;
   min-width: 160px;
-}
-
-.og-link {
   max-height: none;
   position: relative;
-  border: 1px solid var(--color-base-30) !important;
+  border: 1px solid var(--color-base-30);
   background: var(--background-primary);
 
-  display: flex;
-  gap: 0;
-  flex-direction: column;
-  flex-wrap: nowrap;
   overflow: hidden;
   overflow-wrap: break-word;
 
@@ -26,11 +19,11 @@
   /* 초기화 */
   padding-right: 0;
   color: unset;
-  text-decoration: none !important;
+  text-decoration: none;
 }
 
 /* 호버 */
-.og-link:hover {
+.link-thumbnail:hover {
   text-decoration: none;
   color: unset;
 }
@@ -39,10 +32,9 @@
 .og-thumbnail img {
   width: 100%;
   height: 100%;
-  max-height: 100px;
-  object-fit: cover !important;
+  border-radius: 0;
+  object-fit: cover;
   object-position: center;
-  border-radius: 0 !important;
 }
 
 /* og-info-container */
@@ -50,17 +42,17 @@
   display: grid;
   gap: 6px;
   padding: 12px 10px;
-  color: var(--text-normal);
 }
 
 .og-info {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  font-size: var(--font-ui-medium);
 }
 
 .og-description {
-  font-size: 12px;
+  font-size: var(--font-small);
   -webkit-line-clamp: 2;
   display: box;
   display: -webkit-box;
@@ -71,7 +63,7 @@
 }
 
 .og-url {
-  font-size: 12px;
+  font-size: var(--font-small);
   margin-block: 0 !important;
   color: var(--link-color);
   white-space: nowrap;
@@ -79,63 +71,18 @@
   overflow: hidden;
 }
 
-.link-thumbnail.inline-embed {
-  display: inline-block;
-  width: 100%;
-}
-
-@media (width > 300px) {
-  .link-thumbnail.inline-embed {
-    .og-link {
-      min-height: 100px;
-      max-height: 130px;
-      flex-direction: row;
-    }
-
-    .og-link .og-thumbnail {
-      width: 140px;
-      flex-shrink: 0;
-    }
-
-    .og-thumbnail img {
-      max-height: none;
-    }
-
-    .og-info-container {
-      padding: 12px 20px;
-    }
-  }
-}
-
-
 @container link-thumbnail (width > 300px) {
-  .og-link {
-    min-height: 100px;
-    max-height: 130px;
-    flex-direction: row;
-  }
-
-  .og-link .og-thumbnail {
-    width: 140px;
-    flex-shrink: 0;
+  .og-thumbnail {
+    height: 120px;
+    float: left;
   }
 
   .og-thumbnail img {
-    max-height: none;
+    aspect-ratio: 1.2 /1;
   }
 
   .og-info-container {
+    height: 120px;
     padding: 12px 20px;
-  }
-}
-
-
-/* dataview cards css snipets 지원 */
-:is(.markdown-source-view.mod-cm6 .cm-table-widget .table-cell-wrapper,
-  .markdown-rendered tbody tr > td):has(> .link-thumbnail:only-child) {
-  padding: 0;
-
-  .link-thumbnail:only-child {
-    border: none !important;
   }
 }

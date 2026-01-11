@@ -5,7 +5,7 @@ import {syntaxTree, tokenClassNodeProp} from "@codemirror/language";
 import LinkThumbnailPlugin from "@/main";
 import { urlRegex } from "@/Utils/urlRegex";
 import { WidgetType } from "@codemirror/view";
-import { ogDataCacheDisable } from "@/Utils/localforage";
+import { LivePreviewRenderer } from "@/Widget/LinkRenderer";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -33,19 +33,15 @@ class StatefulDecorationSet {
         
         // 모든 비동기 작업을 먼저 시작
         const results = await Promise.all(tokens.map(async (token) => {
-            const isDisable = await ogDataCacheDisable.getItem(token.value);
-            if (isDisable === "") return null;
-
             let deco = this.decoCache[token.value + token.to];
             if(!deco) {
                 const params = await this.plugin.linkDataManger.getCachedLink(token.value);
                 if (params) {
-                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(params, token.value), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
+                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(LivePreviewRenderer(params)), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
                 }
             }
             return { deco: deco, to: token.to }
         }))
-
 
         // 결과값을 순회하며 decorations 배열에 담기
         for (const res of results) {
@@ -157,13 +153,11 @@ function defineStatefulDecoration(): {
     return {update, field};
 }
 class ogLinkWidget extends WidgetType {
-    private readonly source: string;
-    private readonly url: string;
+    private readonly source: HTMLElement;
 
-    constructor(source: string, url: string) {
+    constructor(source: HTMLElement) {
         super();
         this.source = source;
-        this.url = url
     }
 
     eq(other: ogLinkWidget) {
@@ -171,24 +165,7 @@ class ogLinkWidget extends WidgetType {
     }
 
     toDOM() {
-        const wrapper = createDiv({
-            cls: "markdown-rendered cm-embed-link link-thumbnail is-loaded",
-        });
-        const linkEl = createEl("a", {
-            href: this.url,
-            cls: "external-link og-link",
-            attr: {
-                "data-tooltip-position": "top",
-                "aria-label": this.url
-            },
-        });
-        linkEl.insertAdjacentHTML("afterbegin", this.source);
-        linkEl.addEventListener("click", (e) => e.stopPropagation());
-
-        wrapper.appendChild(linkEl);
-        // if (!token.isBlock) wrapper.addClass("inline-embed");
-
-        return wrapper;
+        return this.source;
     }
 
     ignoreEvent(): boolean {

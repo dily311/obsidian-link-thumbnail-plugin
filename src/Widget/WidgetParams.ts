@@ -1,28 +1,46 @@
 import { Platform, requestUrl } from "obsidian";
 import { ogDataCache, ogDataCacheDisable } from "@/Utils/localforage";
 
+// 캐시 제한
+const MAX_CACHE_SIZE = 1000;
+const MAX_DISABLE_CACHE_SIZE = 2000;
+
 // baseUrl 구하는 정규식
 const BASEURL = new RegExp("^https?:\\/\\/[^\\/]+"); 
-const Buffer = (Platform.isMobileApp) ? require("buffer/index.ts") : global.Buffer;
+const BUFFER = (Platform.isMobileApp) ? require("buffer/index.ts") : global.Buffer;
 
+export interface ogData {
+    "ogTitle": string;
+    "ogDescription": string;
+    "ogImage": string;
+    "ogImageAlt": string;
+    "ogUrl": string;
+    "baseUrl": string;
+}
 export class LinkDataManger {
-    private memoryCache: Map<string, string> = new Map();
+    private memoryCache: Map<string, ogData> = new Map();
     private disableCache: Set<string> = new Set(); // 단순 존재 확인은 Set이 더 빠름
-
-    constructor() {
-    }
 
     clearCache() {
         this.memoryCache.clear();
         this.disableCache.clear();
     }
 
-    setCache(key: string, data: string) {
+    setCache(key: string, data: ogData) {
+        // 메모리가 가득찼다면 FIFO 순으로 삭제
+        if (this.memoryCache.size > MAX_CACHE_SIZE) {
+            const firstKey = this.memoryCache.keys().next().value;
+            if (firstKey) this.memoryCache.delete(firstKey)
+        }
         this.memoryCache.set(key, data);
         ogDataCache.setItem(key, data);
     }
 
     setDisableCache(key: string) {
+        if (this.disableCache.size > MAX_DISABLE_CACHE_SIZE) {
+            // 메모리가 가득찼다면 disableCache는 비워버리기
+            this.disableCache.clear();
+        }
         this.disableCache.add(key);
         ogDataCacheDisable.setItem(key, "");
     }
@@ -32,7 +50,10 @@ export class LinkDataManger {
         if (this.disableCache.has(key)) return null;
 
         // 2. 정상 메모리 확인
-        if (this.memoryCache.has(key)) return this.memoryCache.get(key);
+        if (this.memoryCache.has(key)) {
+
+            return this.memoryCache.get(key);
+        }
 
         // 3. Disable DB 확인 (비동기)
         const isDisableData = await ogDataCacheDisable.getItem(key);
@@ -42,7 +63,7 @@ export class LinkDataManger {
         }
 
         // 4. 정상 DB 확인 (비동기)
-        const cachedData = await ogDataCache.getItem(key) as string;
+        const cachedData = await ogDataCache.getItem(key) as ogData;
         if (cachedData) {
             this.memoryCache.set(key, cachedData);
             return cachedData;
@@ -87,25 +108,18 @@ export class LinkDataManger {
             }
         
             const ogImageAlt = document.querySelector("meta[property='og:image:alt']")?.getAttribute("content") || "";
-            const data =  `
-                ${(ogImage === "")? "" : `<div class="og-thumbnail"><img src="${ogImage}" alt="${ogImageAlt}" loading="lazy"></img></div>`}
-                <div class="og-info-container">
-                    <div class="og-info">
-                        <strong>${ogTitle}</strong>
-                    </div>
-                    <div class="og-description">
-                        ${ogDescription}
-                    </div>
-                    <div class="og-url">${key}</div>
-                </div>
-            `;
+            const data: ogData =  {
+                ogTitle: ogTitle,
+                ogDescription: ogDescription,
+               ogImage: ogImage,
+               ogImageAlt: ogImageAlt,
+               ogUrl: key,
+               baseUrl: base ? base[0]: key,
+            }
             return data
         }
         return null;
     }
-
-
-
 }
 
 async function conn(url: string) {
@@ -136,10 +150,10 @@ async function conn(url: string) {
     
         let body;
         if (charset === "utf-8") {
-            body = Buffer.from(bodyArrayBuffer).toString('utf-8');
+            body = BUFFER.from(bodyArrayBuffer).toString('utf-8');
         } else {
             const decoder = new TextDecoder(charset);
-            body = decoder.decode(Buffer.from(bodyArrayBuffer));
+            body = decoder.decode(BUFFER.from(bodyArrayBuffer));
         }
         const parser = new DOMParser();
         const document = parser.parseFromString(body, 'text/html');

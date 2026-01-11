@@ -1,4 +1,4 @@
-import { Plugin } from 'obsidian';
+import { MarkdownView, Plugin } from 'obsidian';
 import { asyncDecoBuilderExt } from '@/LivePreviewMode/EnbedDecoratiion';
 import { PostProcessor } from '@/ReadingMode/PostProcessor';
 import { ogDataCache, ogDataCacheDisable } from '@/Utils/localforage';
@@ -32,8 +32,11 @@ export default class LinkThumbnailPlugin extends Plugin {
     }
 
 	async onunload() {
-		console.log("disabling plugin: link");
+		console.log("disabling plugin: linkThumbnail");
 
+		// 캐시 제거
+		ogDataCache.clear();
+		ogDataCacheDisable.clear();
 		this.linkDataManger.clearCache();
 	}
 
