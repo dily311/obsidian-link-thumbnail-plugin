@@ -1,72 +1,111 @@
-import { arrayBufferToBase64, requestUrl } from "obsidian";
+import { requestUrl } from "obsidian";
 import { Buffer } from "../LivePreviewMode/Buffer";
-import { urlRegex } from "../Utils/urlRegex";
 import { ogDataCache, ogDataCacheDisable } from "../Utils/localforage";
 
-export interface ogData {
-    "ogTitle": string;
-    "ogDescription": string;
-    "ogImage": string;
-    "ogImageAlt": string;
-    "ogUrl": string;
-    "baseUrl": string;
-}
+// baseUrl 구하는 정규식
+const baseUrl = new RegExp("^https?:\\/\\/[^\\/]+"); 
 
-export async function getItem(url: string) {
-    const dataArray = await ogDataCache.getItem(url) as ogData;
-    if (dataArray) {
-        return template(dataArray);
+export class LinkDataManger {
+    private memoryCache: Map<string, string> = new Map();
+    private disableCache: Set<string> = new Set(); // 단순 존재 확인은 Set이 더 빠름
+
+    constructor() {
     }
 
-    const item = await createdItem(url);
-    if (item) {
-        return template(item);
+    clearCache() {
+        this.memoryCache.clear();
+        this.disableCache.clear();
     }
-}
 
-async function createdItem(url: string) {
-    const document = await conn(url);
-    if (document) {
-        // baseUrl 구하는 정규식
-        const baseUrl = new RegExp("^https?:\\/\\/[^\\/]+"); 
+    setCache(key: string, data: string) {
+        this.memoryCache.set(key, data);
+        ogDataCache.setItem(key, data);
+    }
 
-        const base = baseUrl.exec(url);
-        const ogTitle = document.querySelector("meta[property='og:title']")?.getAttribute("content") || document.querySelector("title")?.textContent || "";
-        if (ogTitle === "") return null;
+    setDisableCache(key: string) {
+        this.disableCache.add(key);
+        ogDataCacheDisable.setItem(key, "");
+    }
     
-        const ogDescription = document.querySelector("meta[property='og:description']")?.getAttribute("content") || "";
-        ogDescription.replace(/(<([^>]+)>)/gi, ""); // 태그 제거
-        ogDescription.replace(/(&(\S+?);)/, "");  // & ; 제거
-        ogDescription.replace(/\s\s+/g, ' ');  // 공백 제거
+    async getCachedLink(key: string) {
+        // 1. Disable 메모리 확인
+        if (this.disableCache.has(key)) return null;
 
-        // let ogImage = "";
-        let imgUrl = document.querySelector("meta[property='og:image']")?.getAttribute("content") || "";
-        if (base && imgUrl !== "" ) {
-            if (!imgUrl.startsWith("https:")) {
-                if (imgUrl.startsWith("//")) {
-                    imgUrl = "https:" + imgUrl;
-                } else {
-                    imgUrl = base[0] + (imgUrl.startsWith("/"))? "" : "/" + imgUrl;
+        // 2. 정상 메모리 확인
+        if (this.memoryCache.has(key)) return this.memoryCache.get(key);
+
+        // 3. Disable DB 확인 (비동기)
+        const isDisableData = await ogDataCacheDisable.getItem(key);
+        if (isDisableData) {
+            this.disableCache.add(key);
+            return null;
+        }
+
+        // 4. 정상 DB 확인 (비동기)
+        const cachedData = await ogDataCache.getItem(key) as string;
+        if (cachedData) {
+            this.memoryCache.set(key, cachedData);
+            return cachedData;
+        }
+        
+        // 5. 모두 없으면 네트워크 요청
+        const data = await this.createdLinkWidget(key);
+        if (!data) {
+            this.setDisableCache(key);
+            return null;
+        }
+        
+        // 링크가 정상적으로 접속이 가능하다면
+        this.setCache(key, data);
+        return data;
+    }
+    
+    async createdLinkWidget(key: string) {
+        const document = await conn(key);
+        if(document) {
+
+
+            const base = baseUrl.exec(key);
+            const ogTitle = document.querySelector("meta[property='og:title']")?.getAttribute("content") || document.querySelector("title")?.textContent || "";
+            if (ogTitle === "") return null;
+        
+            let ogDescription = document.querySelector("meta[property='og:description']")?.getAttribute("content") || "";
+            ogDescription = ogDescription.replace(/(<([^>]+)>)/gi, "")
+                                                            .replace(/(&(\S+?);)/, "") 
+                                                            .replace(/\s\s+/g, ' ')
+                                                            .trim();
+
+            let ogImage = document.querySelector("meta[property='og:image']")?.getAttribute("content") || "";
+            if (base && ogImage !== "" ) {
+                if (!ogImage.startsWith("https:")) {
+                    if (ogImage.startsWith("//")) {
+                        ogImage = "https:" + ogImage;
+                    } else {
+                        ogImage = base[0] + ((ogImage.startsWith("/"))? "" : "/") + ogImage;
+                    }
                 }
             }
-            // todo: 옵션 설정에 따라 로컬에 저장할지 링크만 저장할지 고르게 하기
-            // ogImage = await connImgFile(imgUrl);
+        
+            const ogImageAlt = document.querySelector("meta[property='og:image:alt']")?.getAttribute("content") || "";
+            const data =  `
+                ${(ogImage === "")? "" : `<div class="og-thumbnail"><img src="${ogImage}" alt="${ogImageAlt}" loading="lazy"></img></div>`}
+                <div class="og-info-container">
+                    <div class="og-info">
+                        <strong>${ogTitle}</strong>
+                    </div>
+                    <div class="og-description">
+                        ${ogDescription}
+                    </div>
+                    <div class="og-url">${key}</div>
+                </div>
+            `;
+            return data
         }
-    
-        const ogImageAlt = document.querySelector("meta[property='og:image:alt']")?.getAttribute("content") || "";
-        const data: ogData = {
-            "ogTitle": ogTitle,
-            "ogDescription": ogDescription,
-            "ogImage": imgUrl,
-            "ogImageAlt": ogImageAlt,
-            "ogUrl": url,
-            "baseUrl": (base)? base[0] : ""
-        }
-        await ogDataCache.setItem(url, data);
-        return data
+        return null;
     }
-    await ogDataCacheDisable.setItem(url, "");
-    return null;
+
+
+
 }
 
 async function conn(url: string) {
@@ -76,8 +115,10 @@ async function conn(url: string) {
             headers:{
                 "user-agent": navigator.userAgent,
                 'accept-language': navigator.language,
-                'accept-encoding': "UTF-8"
-            }
+                'accept-encoding': "UTF-8",
+            },
+            // timeout
+            throw: false
         });
 
         const contentType = response.headers["content-type"];
@@ -106,48 +147,5 @@ async function conn(url: string) {
         return document;
     } catch (error) {
         console.log(error, url);
-       
     }
-}
-
-// async function connImgFile(imgUrl: string) {
-//     if (urlRegex.exec(imgUrl)) {
-//         // 저장하기 전에 img 데이터를 url-> blob -> base64로 변환 후 저장
-//         const imgFormat = ["jpg", "jpeg", "png", "bmp", "tif", "gif", "svg"];
-//         try {
-//             let imgType = "";
-//             imgFormat.forEach((format) => {
-//                 if (imgUrl.includes(format)) {
-//                     imgType = format;
-//                 }
-//             });
-    
-//             const file = await requestUrl({
-//                 url: imgUrl,
-//                 contentType: `image/${imgType}`,
-//                 headers: {"user-agent": navigator.userAgent,}
-//             });
-//             const base64String = arrayBufferToBase64(file.arrayBuffer);
-//             if (imgType.includes("svg")) imgType += "+xml";
-//             return `data:image/${imgType};charset=utf-8;base64,` + base64String;
-//         } catch (error) {
-//             console.log(error);
-//         }
-//     }
-//     return "";
-// }
-
-function template(data: ogData) {
-    return `
-        ${(data?.ogImage === "")? "" : `<div class="og-thumbnail"><img src="${data?.ogImage}" alt="${data?.ogImageAlt}" loading="lazy"></img></div>`}
-        <div class="og-info-container">
-            <div class="og-info">
-                <strong>${data?.ogTitle}</strong>
-            </div>
-            <div class="og-description">
-                ${data?.ogDescription}
-            </div>
-            <div class="og-url">${data?.ogUrl}</div>
-        </div>
-    `;
 }

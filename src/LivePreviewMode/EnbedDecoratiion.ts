@@ -1,4 +1,4 @@
-import {debounce, MarkdownView} from "obsidian";
+import {debounce, editorLivePreviewField, MarkdownView} from "obsidian";
 import {EditorView, Decoration, DecorationSet, ViewUpdate, ViewPlugin} from "@codemirror/view";
 import {StateField, StateEffect, StateEffectType, Range} from "@codemirror/state";
 import {syntaxTree, tokenClassNodeProp} from "@codemirror/language";
@@ -6,7 +6,6 @@ import LinkThumbnailPlugin from "../main";
 import { urlRegex } from "../Utils/urlRegex";
 import { WidgetType } from "@codemirror/view";
 import { ogDataCacheDisable } from "../Utils/localforage";
-import { getItem } from "../Widget/WidgetParams";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -31,39 +30,28 @@ class StatefulDecorationSet {
 
     async computeAsyncDecorations(tokens: TokenSpec[]): Promise<DecorationSet | null> {    
         const decorations: Range<Decoration>[] = [];
-        for (const token of tokens) {
+        
+        // 모든 비동기 작업을 먼저 시작
+        const results = await Promise.all(tokens.map(async (token) => {
             const isDisable = await ogDataCacheDisable.getItem(token.value);
+            if (isDisable === "") return null;
 
-            if (isDisable !== "") {
-                // const UID = token.value + token.from + token.to;
-                let deco = this.decoCache[token.value  + token.to];
-                if (!deco) {
-                    const params = await getItem(token.value)
-                    if (params) {
-                        // 넣을 EL 받아오기
-                        const linkEl = createEl("a", {
-                            href: token.value,
-                            cls: "external-link og-link",
-                            attr: {
-                                "data-tooltip-position": "top",
-                                "aria-label": token.value
-                            },
-                        });
-                        linkEl.innerHTML = params;
-                        linkEl.addEventListener("click", (e) => e.stopPropagation());
-                        const wrapper = createDiv({
-                            cls: "markdown-rendered cm-embed-link link-thumbnail is-loaded",
-                        });
-                        wrapper.appendChild(linkEl);
-                        if (!token.isBlock) wrapper.addClass("inline-embed")
-    
-                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(wrapper), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
-                        decorations.push(deco.range(token.to));
-                    } 
-                } else {
-                    decorations.push(deco.range(token.to));
+            let deco = this.decoCache[token.value + token.to];
+            if(!deco) {
+                const params = await this.plugin.linkDataManger.getCachedLink(token.value);
+                if (params) {
+                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(params, token.value), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
                 }
             }
+            return { deco: deco, to: token.to }
+        }))
+
+
+        // 결과값을 순회하며 decorations 배열에 담기
+        for (const res of results) {
+            if(res) {{
+                decorations.push(res.deco.range(res.to));
+            }}
         }
         return Decoration.set(decorations, true);
     }
@@ -73,8 +61,10 @@ class StatefulDecorationSet {
     async updateAsyncDecorations(tokens: TokenSpec[]): Promise<void> {
         // 현재 뷰에서 cssClasses가 적용되는 지 판별
         const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        // cssClasses가 있으면 true / 없으면 false
         const isNoLinkThumbnails = activeView?.contentEl.children[0]?.classList.contains("noLinkThumbnail");
 
+        // 현재 선택된 부분은 적용되지 않게 설정
         // 현재 선택된 부분
         const selectFrom = this.editor.state.selection.main.from;
         const selectTo = this.editor.state.selection.main.to;
@@ -86,8 +76,10 @@ class StatefulDecorationSet {
             const isUrl = urlRegex.test(token.value);
             return !isSelected && isUrl;
         });
-
-        const decorations = (!isNoLinkThumbnails)? await this.computeAsyncDecorations(tokens): null;
+        // 현재 모드 판별 : false: editor / true: livePreview
+        const isLivePreviewMode = this.editor.state.field(editorLivePreviewField);
+        const decorations = (isLivePreviewMode && !isNoLinkThumbnails)? await this.computeAsyncDecorations(tokens): null;
+        
         // if our compute function returned nothing and the state field still has decorations, clear them out
         if (decorations || this.editor.state.field(statefulDecorations.field).size) {
             this.editor.dispatch({effects: statefulDecorations.update.of(decorations || Decoration.none)});
@@ -165,11 +157,13 @@ function defineStatefulDecoration(): {
     return {update, field};
 }
 class ogLinkWidget extends WidgetType {
-    private readonly source: HTMLDivElement;
+    private readonly source: string;
+    private readonly url: string;
 
-    constructor(source: HTMLDivElement) {
+    constructor(source: string, url: string) {
         super();
         this.source = source;
+        this.url = url
     }
 
     eq(other: ogLinkWidget) {
@@ -177,7 +171,24 @@ class ogLinkWidget extends WidgetType {
     }
 
     toDOM() {
-        return this.source;
+        const wrapper = createDiv({
+            cls: "markdown-rendered cm-embed-link link-thumbnail is-loaded",
+        });
+        const linkEl = createEl("a", {
+            href: this.url,
+            cls: "external-link og-link",
+            attr: {
+                "data-tooltip-position": "top",
+                "aria-label": this.url
+            },
+        });
+        linkEl.insertAdjacentHTML("afterbegin", this.source);
+        linkEl.addEventListener("click", (e) => e.stopPropagation());
+
+        wrapper.appendChild(linkEl);
+        // if (!token.isBlock) wrapper.addClass("inline-embed");
+
+        return wrapper;
     }
 
     ignoreEvent(): boolean {

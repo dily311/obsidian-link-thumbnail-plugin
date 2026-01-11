@@ -1,7 +1,6 @@
 import { MarkdownPostProcessorContext, MarkdownView } from "obsidian";
 import LinkThumbnailPlugin from "../main";
 import { urlRegex } from "../Utils/urlRegex";
-import { getItem } from "../Widget/WidgetParams";
 
 export class PostProcessor {
 	plugin: LinkThumbnailPlugin;
@@ -27,7 +26,7 @@ export class PostProcessor {
 				// url이 적합한 지 판벌
 				const isUrl = urlRegex.test(url);
 				if (isUrl) {
-					const params = await getItem(url);
+					const params = await this.plugin.linkDataManger.getCachedLink(url);
 					if (params != null) {
 						const linkContainer = linkEl.parentElement;
 						
