@@ -1,9 +1,9 @@
-import { requestUrl } from "obsidian";
-import { Buffer } from "../LivePreviewMode/Buffer";
-import { ogDataCache, ogDataCacheDisable } from "../Utils/localforage";
+import { Platform, requestUrl } from "obsidian";
+import { ogDataCache, ogDataCacheDisable } from "@/Utils/localforage";
 
 // baseUrl 구하는 정규식
-const baseUrl = new RegExp("^https?:\\/\\/[^\\/]+"); 
+const BASEURL = new RegExp("^https?:\\/\\/[^\\/]+"); 
+const Buffer = (Platform.isMobileApp) ? require("buffer/index.ts") : global.Buffer;
 
 export class LinkDataManger {
     private memoryCache: Map<string, string> = new Map();
@@ -65,7 +65,7 @@ export class LinkDataManger {
         if(document) {
 
 
-            const base = baseUrl.exec(key);
+            const base = BASEURL.exec(key);
             const ogTitle = document.querySelector("meta[property='og:title']")?.getAttribute("content") || document.querySelector("title")?.textContent || "";
             if (ogTitle === "") return null;
         

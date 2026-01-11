@@ -1,6 +1,6 @@
 import { MarkdownPostProcessorContext, MarkdownView } from "obsidian";
-import LinkThumbnailPlugin from "../main";
-import { urlRegex } from "../Utils/urlRegex";
+import LinkThumbnailPlugin from "@/main";
+import { urlRegex } from "@/Utils/urlRegex";
 
 export class PostProcessor {
 	plugin: LinkThumbnailPlugin;

@@ -1,8 +1,8 @@
 import { Plugin } from 'obsidian';
-import { asyncDecoBuilderExt } from './LivePreviewMode/EnbedDecoratiion';
-import { PostProcessor } from './ReadingMode/PostProcessor';
-import { ogDataCache, ogDataCacheDisable } from './Utils/localforage';
-import { LinkDataManger } from './Widget/WidgetParams';
+import { asyncDecoBuilderExt } from '@/LivePreviewMode/EnbedDecoratiion';
+import { PostProcessor } from '@/ReadingMode/PostProcessor';
+import { ogDataCache, ogDataCacheDisable } from '@/Utils/localforage';
+import { LinkDataManger } from '@/Widget/WidgetParams';
 
 export default class LinkThumbnailPlugin extends Plugin {
 	linkDataManger: LinkDataManger

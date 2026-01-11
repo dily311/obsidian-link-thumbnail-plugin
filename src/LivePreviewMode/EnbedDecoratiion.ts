@@ -2,10 +2,10 @@ import {debounce, editorLivePreviewField, MarkdownView} from "obsidian";
 import {EditorView, Decoration, DecorationSet, ViewUpdate, ViewPlugin} from "@codemirror/view";
 import {StateField, StateEffect, StateEffectType, Range} from "@codemirror/state";
 import {syntaxTree, tokenClassNodeProp} from "@codemirror/language";
-import LinkThumbnailPlugin from "../main";
-import { urlRegex } from "../Utils/urlRegex";
+import LinkThumbnailPlugin from "@/main";
+import { urlRegex } from "@/Utils/urlRegex";
 import { WidgetType } from "@codemirror/view";
-import { ogDataCacheDisable } from "../Utils/localforage";
+import { ogDataCacheDisable } from "@/Utils/localforage";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -79,7 +79,7 @@ class StatefulDecorationSet {
         // 현재 모드 판별 : false: editor / true: livePreview
         const isLivePreviewMode = this.editor.state.field(editorLivePreviewField);
         const decorations = (isLivePreviewMode && !isNoLinkThumbnails)? await this.computeAsyncDecorations(tokens): null;
-        
+
         // if our compute function returned nothing and the state field still has decorations, clear them out
         if (decorations || this.editor.state.field(statefulDecorations.field).size) {
             this.editor.dispatch({effects: statefulDecorations.update.of(decorations || Decoration.none)});
