@@ -1,7 +1,18 @@
-import { ogData } from "./WidgetParams";
+import { ogData } from "./LinkDataManger";
 
-export function LinkRenderer(ogData: ogData): DocumentFragment {
-    const wrapper = createFragment()
+export function LinkRenderer(ogData: ogData): HTMLElement {
+    const wrapper = createDiv({
+        cls: "cm-embed-link link-thumbnail",
+        attr: {
+            "data-tooltip-position": "top",
+            "aria-label": ogData.ogUrl
+        },
+    });
+    wrapper.addEventListener("click", (e) => {
+        e.stopPropagation();
+        // 외부 브라우저 열기
+        window.open(ogData.ogUrl, "_blank");
+    });
 
     if (ogData.ogImage) {
         const ogImageWrapper = createDiv({cls: "og-thumbnail"});
@@ -25,24 +36,11 @@ export function LinkRenderer(ogData: ogData): DocumentFragment {
     desEl.setText(ogData.ogDescription);
     containerEl.appendChild(desEl);
 
-    const urlEl = createDiv({cls: "og-url"});
+    const urlEl = createEl("a", {href: ogData.ogUrl, cls: "og-url", attr: {target: "_blank"}});
     urlEl.setText((ogData.baseUrl !== "")? ogData.baseUrl: ogData.ogUrl);
+    urlEl.addEventListener("click", (e) => e.stopPropagation())
     containerEl.appendChild(urlEl);
     wrapper.appendChild(containerEl);
 
     return wrapper;
-}
-
-export function LivePreviewRenderer(ogData: ogData): HTMLElement {
-        const linkEl = createEl("a", {
-            href: ogData.ogUrl,
-            cls: "external-link link-thumbnail",
-            attr: {
-                "data-tooltip-position": "top",
-                "aria-label": ogData.ogUrl
-            },
-        });
-        linkEl.addEventListener("click", (e) => e.stopPropagation());
-        linkEl.appendChild(LinkRenderer(ogData));
-        return linkEl
 }

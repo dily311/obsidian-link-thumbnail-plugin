@@ -5,7 +5,7 @@ import {syntaxTree, tokenClassNodeProp} from "@codemirror/language";
 import LinkThumbnailPlugin from "@/main";
 import { urlRegex } from "@/Utils/urlRegex";
 import { WidgetType } from "@codemirror/view";
-import { LivePreviewRenderer } from "@/Widget/LinkRenderer";
+import { LinkRenderer } from "@/Widget/LinkRenderer";
 
 //based on: https://gist.github.com/nothingislost/faa89aa723254883d37f45fd16162337
 
@@ -37,7 +37,7 @@ class StatefulDecorationSet {
             if(!deco) {
                 const params = await this.plugin.linkDataManger.getCachedLink(token.value);
                 if (params) {
-                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(LivePreviewRenderer(params)), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
+                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(LinkRenderer(params)), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
                 }
             }
             return { deco: deco, to: token.to }

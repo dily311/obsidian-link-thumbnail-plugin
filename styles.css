@@ -3,7 +3,6 @@
   container-name: link-thumbnail;
   container-type: inline-size;
 
-  display: block;
   min-width: 160px;
   max-height: none;
 
@@ -12,18 +11,7 @@
 
   overflow: hidden;
   overflow-wrap: break-word;
-
-
-  /* 초기화 */
-  padding-right: 0;
-  color: unset;
-  text-decoration: none;
-}
-
-/* 호버 */
-.link-thumbnail:hover {
-  text-decoration: none;
-  color: unset;
+  cursor: pointer;
 }
 
 /* og-thumbnail */
@@ -50,7 +38,7 @@
 }
 
 .og-description {
-  font-size: var(--font-small);
+  font-size: var(--font-smaller);
   -webkit-line-clamp: 2;
   display: box;
   display: -webkit-box;
@@ -61,12 +49,17 @@
 }
 
 .og-url {
-  font-size: var(--font-small);
+  font-size: var(--font-smaller);
   margin-block: 0 !important;
-  color: var(--link-color);
+  text-decoration: none;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+/* 호버 */
+.og-url:hover {
+  text-decoration: none;
+  color: var(--link-color);
 }
 
 @container link-thumbnail (width > 300px) {
