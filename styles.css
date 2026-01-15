@@ -1,5 +1,4 @@
-.link-thumbnail,
-.external-link.link-thumbnail {
+.link-thumbnail {
   container-name: link-thumbnail;
   container-type: inline-size;
 
@@ -12,6 +11,19 @@
   overflow: hidden;
   overflow-wrap: break-word;
   cursor: pointer;
+}
+
+.link-thumbnail .external-link {
+  color:  unset;
+  text-decoration: none;
+  background: none;
+  padding-inline-end: 0;
+  filter: none;
+  transition: none;
+}
+
+.link-thumbnail .external-link:hover {
+  color: unset;
 }
 
 /* og-thumbnail */

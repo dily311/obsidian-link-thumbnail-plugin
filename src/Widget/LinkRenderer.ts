@@ -1,18 +1,27 @@
 import { ogData } from "./LinkDataManger";
 
-export function LinkRenderer(ogData: ogData): HTMLElement {
+export function LinkRenderer(ogData: ogData, cssClasses: string[] = []): HTMLElement {
     const wrapper = createDiv({
-        cls: "cm-embed-link link-thumbnail",
+        cls: `link-thumbnail`,
         attr: {
             "data-tooltip-position": "top",
             "aria-label": ogData.ogUrl
         },
     });
-    wrapper.addEventListener("click", (e) => {
-        e.stopPropagation();
-        // 외부 브라우저 열기
-        window.open(ogData.ogUrl, "_blank");
+    if (cssClasses.length !== 0) {
+        wrapper.addClasses(cssClasses)
+    }
+
+    const linkWrapper = createEl("a", {
+        cls: "external-link",
+        attr: {
+            "href": ogData.ogUrl,
+            "target": "_blank",
+            "rel": "noopener nofollow"
+        }
     });
+    wrapper.appendChild(linkWrapper);
+
 
     if (ogData.ogImage) {
         const ogImageWrapper = createDiv({cls: "og-thumbnail"});
@@ -22,7 +31,7 @@ export function LinkRenderer(ogData: ogData): HTMLElement {
             loading: "lazy"
         }})
         ogImageWrapper.appendChild(ogImage);
-        wrapper.appendChild(ogImageWrapper);
+        linkWrapper.appendChild(ogImageWrapper);
     }
 
     const containerEl = createDiv({cls: "og-info-container"});
@@ -40,7 +49,7 @@ export function LinkRenderer(ogData: ogData): HTMLElement {
     urlEl.setText((ogData.baseUrl !== "")? ogData.baseUrl: ogData.ogUrl);
     urlEl.addEventListener("click", (e) => e.stopPropagation())
     containerEl.appendChild(urlEl);
-    wrapper.appendChild(containerEl);
+    linkWrapper.appendChild(containerEl);
 
     return wrapper;
 }

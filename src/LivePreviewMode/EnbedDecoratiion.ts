@@ -37,7 +37,7 @@ class StatefulDecorationSet {
             if(!deco) {
                 const params = await this.plugin.linkDataManger.getCachedLink(token.value);
                 if (params) {
-                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(LinkRenderer(params)), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
+                        deco = this.decoCache[token.value  + token.to] = Decoration.widget({widget: new ogLinkWidget(LinkRenderer(params, ["cm-embed-link"])), side: (token.isBlock)? 3e8: 2e8 , block: token.isBlock});
                 }
             }
             return { deco: deco, to: token.to }

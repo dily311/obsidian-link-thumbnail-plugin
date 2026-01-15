@@ -28,7 +28,9 @@ export class PostProcessor {
 				const isUrl = urlRegex.test(url);
 				if (isUrl) {
 					const ogData = await this.plugin.linkDataManger.getCachedLink(url);
-					if (ogData != null) {						
+					if (ogData != null) {
+						// linkEl.innerHTML = "";
+						// linkEl.appendChild(LinkRenderer(ogData))
 						linkEl.replaceWith(LinkRenderer(ogData))
 					}
 				}
