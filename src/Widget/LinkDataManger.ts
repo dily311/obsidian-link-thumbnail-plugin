@@ -33,7 +33,7 @@ export class LinkDataManger {
 			if (firstKey) this.memoryCache.delete(firstKey);
 		}
 		this.memoryCache.set(key, data);
-		ogDataCache.setItem(key, data);
+		ogDataCache?.setItem(key, data);
 	}
 
 	setDisableCache(key: string) {
@@ -42,7 +42,7 @@ export class LinkDataManger {
 			this.disableCache.clear();
 		}
 		this.disableCache.add(key);
-		ogDataCacheDisable.setItem(key, "");
+		ogDataCacheDisable?.setItem(key, "");
 	}
 
 	async getCachedLink(key: string): Promise<ogData | null> {
@@ -52,14 +52,14 @@ export class LinkDataManger {
 			const memoryData = this.memoryCache.get(key);
 			if (memoryData) return memoryData;
 
-			const isDisabled = await ogDataCacheDisable.getItem(key);
+			const isDisabled = await ogDataCacheDisable?.getItem(key);
 
 			if (isDisabled) {
 				this.disableCache.add(key);
 				return null;
 			}
 
-			const cachedData = await ogDataCache.getItem<ogData>(key);
+			const cachedData = await ogDataCache?.getItem<ogData>(key);
 
 			if (cachedData) {
 				this.memoryCache.set(key, cachedData);
@@ -82,7 +82,7 @@ export class LinkDataManger {
 			this.setMemoryCache(key, data);
 
 			// 영속 캐시는 실패하더라도 가져온 데이터까지 잃지 않도록 분리한다.
-			void ogDataCache.setItem(key, data).catch((error) => {
+			void ogDataCache?.setItem(key, data).catch((error) => {
 				console.warn("[LinkThumbnail] Failed to save cache:", key, error,);
 			});
 
@@ -117,7 +117,7 @@ export class LinkDataManger {
 			this.disableCache.add(key);
 		}
 
-		await ogDataCacheDisable.setItem(key, "");
+		await ogDataCacheDisable?.setItem(key, "");
 	}
 
 	async createdLinkWidget(key: string) {

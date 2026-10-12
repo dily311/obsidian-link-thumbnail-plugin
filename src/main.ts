@@ -1,47 +1,41 @@
-import { Plugin } from 'obsidian';
-import { asyncDecoBuilderExt } from '@/LivePreviewMode/EnbedDecoratiion';
-import { PostProcessor } from '@/ReadingMode/PostProcessor';
-import { ogDataCache, ogDataCacheDisable } from '@/Utils/localforage';
-import { LinkDataManger } from './Widget/LinkDataManger';
-
-
+import { Plugin } from "obsidian";
+import { asyncDecoBuilderExt } from "@/LivePreviewMode/EnbedDecoratiion";
+import { PostProcessor } from "@/ReadingMode/PostProcessor";
+import { ogDataCache, ogDataCacheDisable } from "@/Utils/localforage";
+import { LinkDataManger } from "./Widget/LinkDataManger";
 export default class LinkThumbnailPlugin extends Plugin {
 	linkDataManger: LinkDataManger | null = null;
 
-    async onload() {
+	async onload() {
 		this.linkDataManger = new LinkDataManger();
-		
+
 		// add command
 		this.addCommand({
 			id: "Remove-caching-link data",
 			name: "Remove caching link data",
 			callback: () => {
-				if (!this.linkDataManger) return;
-				ogDataCache.clear();
-				ogDataCacheDisable.clear();
-				this.linkDataManger.clearCache();
-			}
-		})
-		
+				ogDataCache?.clear();
+				ogDataCacheDisable?.clear();
+				this.linkDataManger?.clearCache();
+			},
+		});
+
 		// In Reading Mode
 		const postProcessor = new PostProcessor(this);
-        this.registerMarkdownPostProcessor(postProcessor.processor);
-		
+		this.registerMarkdownPostProcessor(postProcessor.processor);
+
 		// In LivePre view Mode
 		this.registerEditorExtension(asyncDecoBuilderExt(this));
 		// 모든 편집기에 변경사항 반영
 		this.app.workspace.updateOptions();
-    }
+	}
 
 	async onunload() {
 		console.log("disabling plugin: linkThumbnail");
 
 		// 캐시 제거
-		ogDataCache.clear();
-		ogDataCacheDisable.clear();
-		
-		if (!this.linkDataManger) return;
-		this.linkDataManger.clearCache();
+		ogDataCache?.clear();
+		ogDataCacheDisable?.clear();
+		this.linkDataManger?.clearCache();
 	}
-
 }
