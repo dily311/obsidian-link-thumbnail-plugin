@@ -2,10 +2,11 @@ import { Plugin } from 'obsidian';
 import { asyncDecoBuilderExt } from '@/LivePreviewMode/EnbedDecoratiion';
 import { PostProcessor } from '@/ReadingMode/PostProcessor';
 import { ogDataCache, ogDataCacheDisable } from '@/Utils/localforage';
-import { LinkDataManger } from '@/Widget/LinkDataManger';
+import { LinkDataManger } from './Widget/LinkDataManger';
+
 
 export default class LinkThumbnailPlugin extends Plugin {
-	linkDataManger: LinkDataManger
+	linkDataManger: LinkDataManger | null = null;
 
     async onload() {
 		this.linkDataManger = new LinkDataManger();
@@ -15,6 +16,7 @@ export default class LinkThumbnailPlugin extends Plugin {
 			id: "Remove-caching-link data",
 			name: "Remove caching link data",
 			callback: () => {
+				if (!this.linkDataManger) return;
 				ogDataCache.clear();
 				ogDataCacheDisable.clear();
 				this.linkDataManger.clearCache();
@@ -37,6 +39,8 @@ export default class LinkThumbnailPlugin extends Plugin {
 		// 캐시 제거
 		ogDataCache.clear();
 		ogDataCacheDisable.clear();
+		
+		if (!this.linkDataManger) return;
 		this.linkDataManger.clearCache();
 	}
 

@@ -27,10 +27,8 @@ export class PostProcessor {
 				// url이 적합한 지 판벌
 				const isUrl = urlRegex.test(url);
 				if (isUrl) {
-					const ogData = await this.plugin.linkDataManger.getCachedLink(url);
+					const ogData = await this.plugin.linkDataManger?.getCachedLink(url);
 					if (ogData != null) {
-						// linkEl.innerHTML = "";
-						// linkEl.appendChild(LinkRenderer(ogData))
 						linkEl.replaceWith(LinkRenderer(ogData))
 					}
 				}
